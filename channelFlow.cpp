@@ -13,12 +13,12 @@ int main()
 	//example of LBM implementation for channel flow (2D) in C - as introduced in LBM lecture
 	//initialization parameters
 	//grid parameters
-	double height=0.5; //half channel height in [m]
-	double length=30*height; //channel length
-	double deltaX = 0.1; //grid spacing
+	double height=1.0; //half channel height in [m]
+	double length=0.5; //channel length
+	double deltaX = 0.025; //grid spacing
 	//fluid parameters
-	double rho=1000; //fluid density [kg/m^3] 
-	double viscosity=1e-6; //kinematic fluid viscosity
+	double rho=900; //fluid density [kg/m^3] 
+	double viscosity=3e-3; //kinematic fluid viscosity
 	//flow parameters
 	double Re=100; //Reynolds number
 	double meanVelocity=Re*viscosity/(2*height); //mean velocity
@@ -30,7 +30,7 @@ int main()
 	//output intervall
 	int writeInterval=20000;
 	//cpus for shared memory parallelization
-	int cpus = 12;
+	int cpus = 8;
 	omp_set_num_threads(cpus); //set number of threads
 
 	//calc lattice dependent variables
