@@ -13,6 +13,7 @@ int main()
 	//example of LBM implementation for channel flow (2D) in C - as introduced in LBM lecture
 	//initialization parameters
 	//grid parameters
+  double u_w = 0.001;
 	double height=1.0; //half channel height in [m]
 	double length=0.5; //channel length
 	double deltaX = 0.025; //grid spacing
@@ -210,7 +211,7 @@ int main()
 	  	} //end l
 	  } //end k
   
-	  //bottom wall --> half way bounce back
+    //-----------------------------Bottom Moving Wall (Bounce Back)---------------------------------
 	  #pragma omp parallel for
 	  for (int k=1;k<(nx-1);k++) //all nodes in x direction in this line; except corner nodes
 	  {
@@ -227,7 +228,7 @@ int main()
 	  distribution[1][1][0][4]=distribution[0][0][0][6]; //k=0; i=4
 	  distribution[nx-2][1][0][5]=distribution[nx-1][0][0][7]; //k=nx-1; i=5
   
-	  //top wall --> half way bounce back
+    //-----------------------------Top (Specular Reflection)---------------------------------
 	  #pragma omp parallel for
 	  for(int k=1;k<(nx-1);k++) //all nodes in x direction in this line; except corner nodes
 	  {
@@ -236,15 +237,21 @@ int main()
 		//i=3
 		distribution[k][l-1][0][3]=distribution[k][l][0][1];
 		//i=6
-		distribution[k-1][l-1][0][6]=distribution[k][l][0][4];
+		distribution[k][l-1][0][6]=distribution[k][l][0][5];
 		//i=7
-		distribution[k+1][l-1][0][7]=distribution[k][l][0][5];
+		distribution[k][l-1][0][7]=distribution[k][l][0][4];
 	  } //end k
-	  //do corner nodes
-	  distribution[1][ny-2][0][7]=distribution[0][ny-1][0][5]; //k=0; i=7
-	  distribution[nx-2][ny-2][0][6]=distribution[nx-1][ny-1][0][4]; //k=nx; i=4
+
+	  //Top left corner
+	  distribution[1][ny-2][0][3]=distribution[0][ny-1][0][1]; //k=0; i=3
+	  distribution[1][ny-2][0][7]=distribution[0][ny-1][0][4]; //k=0; i=7
+
+	  //Top left corner
+	  distribution[nx-2][ny-2][0][3]=distribution[nx-1][ny-1][0][1]; //k=nx; i=3
+	  distribution[nx-2][ny-2][0][6]=distribution[nx-1][ny-1][0][5]; //k=nx; i=6
 
 
+    //-----------------------------Periodic BC---------------------------------
 	  //inlet nodes --> eq distribution
 	  #pragma omp parallel for
 	  for (int l=1;l<(ny-1);l++) //all nodes in y direction in this column (expect bottom and top node)
