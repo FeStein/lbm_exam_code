@@ -211,22 +211,23 @@ int main()
 	  	} //end l
 	  } //end k
   
-    //-----------------------------Bottom Moving Wall (Bounce Back)---------------------------------
+    //-----------------------------Bottom: Moving Wall (Bounce Back)---------------------------------
 	  #pragma omp parallel for
 	  for (int k=1;k<(nx-1);k++) //all nodes in x direction in this line; except corner nodes
 	  {
 		int l=0; //only bottom wall nodes (first line in y direction)
-		//only lattice directions in +y direction --> bounce back
-		//i=1
-		distribution[k][l+1][0][1]=distribution[k][l][0][3];
-		//i=4
-		distribution[k+1][l+1][0][4]=distribution[k][l][0][6];
-		//i=6
-		distribution[k-1][l+1][0][5]=distribution[k][l][0][7];
+    double factor = 2 * (fluidDensity[k][l] / pow(speedOfSound,2)) * fluidVelocity[k][l][0] * u_w;
+    //only lattice directions in +y direction --> bounce back
+    //i=1
+    distribution[k][l+1][0][1] = distribution[k][l][0][3] + weigths[1] * factor;
+    //i=4
+    distribution[k+1][l+1][0][4]=distribution[k][l][0][6] + weigths[4] * factor;
+    //i=6
+    distribution[k-1][l+1][0][5]=distribution[k][l][0][7] + weigths[1] * factor;
 	  } //end k
 	  //do corner nodes
-	  distribution[1][1][0][4]=distribution[0][0][0][6]; //k=0; i=4
-	  distribution[nx-2][1][0][5]=distribution[nx-1][0][0][7]; //k=nx-1; i=5
+	  distribution[1][1][0][4]=distribution[0][0][0][6] + weigths[4] * 2 * (fluidDensity[1][1] / pow(speedOfSound,2)) * fluidVelocity[1][1][0] * u_w; //k=0; i=4
+	  distribution[nx-2][1][0][5]=distribution[nx-1][0][0][7]+ weigths[5] * 2 * (fluidDensity[nx-2][1] / pow(speedOfSound,2)) * fluidVelocity[nx-2][1][0] * u_w; //k=nx-1; i=5
   
     //-----------------------------Top (Specular Reflection)---------------------------------
 	  #pragma omp parallel for
