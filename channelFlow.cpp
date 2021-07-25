@@ -10,41 +10,43 @@ using namespace std;
 
 int main()
 {
-	//example of LBM implementation for channel flow (2D) in C - as introduced in LBM lecture
-	//initialization parameters
-	//grid parameters
-  double u_w = 0.001;
-	double height=1.0; //half channel height in [m]
-	double length=0.5; //channel length
-	double deltaX = 0.025; //grid spacing
-	//fluid parameters
-	double rho=900; //fluid density [kg/m^3] 
-	double viscosity=3e-3; //kinematic fluid viscosity
-	//flow parameters
-	double Re=2000; //Reynolds number
-	double meanVelocity=Re*viscosity/(2*height); //mean velocity
-	double inflowVelocity[2]={meanVelocity, 0};//inflow velocity --> const
-	//time step control
-	double machNumber=0.01; //Mach number
-	//calculation duration
-	long timeSteps=200000; //time steps to go
-	//output intervall
-	int writeInterval=20000;
-	//cpus for shared memory parallelization
-	int cpus = 8;
-	omp_set_num_threads(cpus); //set number of threads
+  //----------------------------------------------------------------
+  //      Parameter Definitions
+  //----------------------------------------------------------------
 
-	//calc lattice dependent variables
-	double maxExpectedVelocity=u_w; //max. expected velocity
-	double deltaT=machNumber*deltaX/(sqrt(3.)*maxExpectedVelocity); //time step from Ma condition
-	double xsi0=deltaX/deltaT; //molecular velocity
-	double speedOfSound=xsi0/sqrt(3.); //isothermal speed of sound (in lattice)
-	double omega=pow(speedOfSound,2)*deltaT/(viscosity+0.5*pow(speedOfSound,2)*deltaT); //relaxation parameter for collision
-	 //check omega for stability reasons
-	  cout << "Omega is: " << omega << endl;
-	double epsilon=1e-8; //geometrical tolerance
-	long nx=ceil(length/deltaX+epsilon)+1; //number of nodes in x direction
+  //-----------------------------Geometry---------------------------------
+	double height=1.0;            //half channel height in [m]
+	double length=0.5;            //channel length
+	double deltaX = 0.025;        //grid spacing
+	double epsilon=1e-8;          //geometrical tolerance
+
+	long nx=ceil(length/deltaX+epsilon)+1;   //number of nodes in x direction
 	long ny=ceil(2*height/deltaX+epsilon)+1; //number of nodes in y direction
+
+  //-----------------------------Time---------------------------------
+	long timeSteps=200000;        //time steps to go
+	int writeInterval=20000;
+
+  double deltaT = 5e-5;
+
+	int cpus = 8;                 //number of parallel threads
+	omp_set_num_threads(cpus);    //set number of threads
+
+  //-----------------------------Fluid---------------------------------
+  double u_w = 1e-3;           //moving wall velocity
+	double maxExpectedVelocity=u_w; //max. expected velocity
+  
+	double rho=900;               //fluid density [kg/m^3] 
+	double viscosity=3e-3;        //kinematic fluid viscosity
+
+  //-----------------------------Calc---------------------------------
+	double xsi0=deltaX/deltaT; //molecular velocity
+  double machNumber = sqrt(3.) * deltaT * maxExpectedVelocity / deltaX;
+  double speedOfSound = xsi0 / sqrt(3.);
+  double omega = pow(speedOfSound, 2) * deltaT / (viscosity + 0.5 * pow(speedOfSound, 2) * deltaT);
+
+	//check omega for stability reasons
+	cout << "Omega is: " << omega << endl;
 
 	//allocate and init matrices: 
 	//first array index is x-direction; second array index is y-direction
@@ -379,27 +381,24 @@ int main()
   
     //-----------------------------Top (Specular Reflection)---------------------------------
 	  #pragma omp parallel for
-	  for(int k=0;k< nx;k++) //all nodes in x direction in this line; except corner nodes
-	  {
-		int l=ny-1; //only top wall nodes (last line in y direction)
-		//only lattice directions in -y direction --> bounce back
-		//i=3
-		distribution[k][l-1][0][3]=distribution[k][l][0][1];
-		//i=6
-		distribution[k][l-1][0][6]=distribution[k][l][0][5];
-		//i=7
-		distribution[k][l-1][0][7]=distribution[k][l][0][4];
-	  } //end k
+    for (int k = 1; k < nx - 1; ++k) {
+      //fix y to top boundary
+      int l = ny - 1; 
+      // specular reflection of wall distributions --> positive y-direction
+      distribution[k][l - 1][0][3] = distribution[k][l][0][1];  //i = 36
+      distribution[k - 1][l - 1][0][6] = distribution[k][l][0][5];  //i = 6
+      distribution[k + 1][l - 1][0][7] = distribution[k][l][0][4];  //i = 7
+    }
 
-	  //Top left corner
-	  //distribution[1][ny-2][0][3]=distribution[0][ny-1][0][1]; //k=0; i=3
-	  //distribution[1][ny-2][0][7]=distribution[0][ny-1][0][4]; //k=0; i=7
-    // Dritte geschwindigkeit -> period
+    // specular reflection corner node(0,ny-1)
+    distribution[0][ny - 2][0][3]   = distribution[0][ny - 1][0][1]; //i = 3
+    distribution[nx - 1][ny - 2][0][6] = distribution[0][ny - 1][0][5]; //i = 6
+    distribution[1][ny - 2][0][7]   = distribution[0][ny - 1][0][4]; //i = 7
 
-	  //Top right corner
-	  //distribution[nx-2][ny-2][0][3]=distribution[nx-1][ny-1][0][1]; //k=nx; i=3
-	  //distribution[nx-2][ny-2][0][6]=distribution[nx-1][ny-1][0][5]; //k=nx; i=6
-    // Dritte geschwindigkeit -> period
+    // specular reflection corner node(nx-1,ny-1)
+    distribution[nx - 1][ny - 2][0][3] = distribution[nx - 1][ny - 1][0][1]; //i = 3
+    distribution[nx - 2][ny - 2][0][6] = distribution[nx - 1][ny - 1][0][5]; //i = 6
+    distribution[0][ny - 2][0][7]   = distribution[nx - 1][ny - 1][0][4]; //i = 7
 
     //----------------------------Moments----------------------------------
 	  for(int k=0;k<nx;k++)  //all nodes in x direction
@@ -442,13 +441,7 @@ int main()
 	  if (t % 1000 == 0)
 	  {
 		//use node at half channel height after 2/3 of channel length
-		int nxRes = 2 * nx / 3;
-		int nyRes = ny / 2;
-		double yPosition = (nyRes - 0.5) * deltaX; //y position of nyRes in channel
-		double analyticalSolution = 1.5 * meanVelocity * (2 * yPosition/height - pow(yPosition,2) / pow(height,2)); //analytical solution for x-velocity
-		double err = sqrt(pow(fluidVelocity[nxRes][nyRes][0] - analyticalSolution,2) + pow(fluidVelocity[nxRes][nyRes][1], 2)) / analyticalSolution * 100; //calc error as RMS value
-		cout << "time step: "<< t << " error [%]: " << err << endl;
-		cout << "numerical solution " << fluidVelocity[nxRes][nyRes][0] << endl << endl;
+		cout << "time step: "<< t << " error [%]: " << endl;
 	  }
 	  //write results for appropiate time steps
 	  if (t % writeInterval == 0) writeResults(t, deltaT, nx, ny, deltaX, fluidDensity, speedOfSound, fluidVelocity);
@@ -457,6 +450,5 @@ int main()
 	//write final result
 	writeResults(t, deltaT, nx, ny, deltaX, fluidDensity, speedOfSound, fluidVelocity);
 }//end main
-
 
 
