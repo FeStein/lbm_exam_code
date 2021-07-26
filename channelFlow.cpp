@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
   //-----------------------------Geometry---------------------------------
 	double height=1.0;            //half channel height in [m]
 	double length=0.5;            //channel length
-	double deltaX = 0.025;        //grid spacing
+	double deltaX = 0.005;        //grid spacing
 	double epsilon=1e-8;          //geometrical tolerance
 
 	long nx=ceil(length/deltaX+epsilon)+1;   //number of nodes in x direction
