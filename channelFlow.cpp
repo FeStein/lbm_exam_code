@@ -15,7 +15,11 @@ int main()
   //----------------------------------------------------------------
   //      Parameter Definitions
   //----------------------------------------------------------------
+  double u_0 = 1e-3;            //max speed of the wall
+  double u_w = 0.0;             //current speed of the wall 
 
+  double n = M_PI / 10.0;
+  double frequency = 1.0/20.0;      // frequency of the wall
   //-----------------------------Geometry---------------------------------
 	double height=1.0;            //half channel height in [m]
 	double length=0.5;            //channel length
@@ -25,18 +29,20 @@ int main()
 	long nx=ceil(length/deltaX+epsilon)+1;   //number of nodes in x direction
 	long ny=ceil(2*height/deltaX+epsilon)+1; //number of nodes in y direction
 
+  //-----------------------------Wall---------------------------------
+  
+
   //-----------------------------Time---------------------------------
 	long timeSteps=2000000;        //time steps to go
 	int writeInterval=20000;
 
-  double deltaT = 5e-5;
+  double deltaT = 5e-4;
 
 	int cpus = 8;                 //number of parallel threads
 	omp_set_num_threads(cpus);    //set number of threads
 
   //-----------------------------Fluid---------------------------------
-  double u_w = 1e-3;           //moving wall velocity
-	double maxExpectedVelocity=u_w; //max. expected velocity
+	double maxExpectedVelocity=u_0; //max. expected velocity
   
 	double rho=900;               //fluid density [kg/m^3] 
 	double viscosity=3e-3;        //kinematic fluid viscosity
@@ -152,11 +158,14 @@ int main()
 
 	//init time step counter for use outside of loop
 	long t = 0;
-  vector<double> vconv;
+  vector<double> verror;
   vector<vector<double>> vvelo_write;
 	//outer loop over all time steps
 	for (t=0;t<timeSteps;t++)
 	{
+    //calculate time dependent wall speed
+    u_w = u_0 * cos(n * t * deltaT);
+
 	  //transport step for all fluid nodes
 	  #pragma omp parallel for
 	  for (int k = 1; k < (nx - 1); k++)  //all fluid nodes in x direction
@@ -455,12 +464,20 @@ int main()
 		  } //end i
 		} //end l
 	  } //end k
-  
+
+    //convergence measure
+    double error = 0.0;
+    double nus;
+    for (int i = 1; i < ny-1; ++i) {
+      nus = (deltaX * (float(i) - 0.5)) * sqrt(n / (2 * viscosity));
+      error += abs(u_0 * exp(-nus) * cos(n * t * deltaT - nus));
+    }
+    verror.push_back(error);
 	  //do convergence measure --> 
 	  if (t % 1000 == 0)
 	  {
 		//use node at half channel height after 2/3 of channel length
-		cout << "time step: "<< t << " error [%]: " << endl;
+		cout << "time step: "<< t << " error [%]: "<< error << endl;
 	  }
 	  //write results for appropiate time steps
 	  if (t % writeInterval == 0){
@@ -487,6 +504,14 @@ int main()
     }  
     ofile << endl;
   }
+  ofile.close();
+
+  //write error vector
+  ofile.open("error.log");
+  for (int i = 0; i < verror.size(); ++i) {
+    ofile << i * deltaT << "," << verror[i] << endl;
+  }
+  ofile.close();
 }//end main
 
 
