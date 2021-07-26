@@ -10,12 +10,12 @@
 
 using namespace std;
 
-int main()
+int main(int argc, char *argv[])
 {
   //----------------------------------------------------------------
   //      Parameter Definitions
   //----------------------------------------------------------------
-  double u_0 = 1e-3;            //max speed of the wall
+  double u_0 = atof(argv[1]);            //max speed of the wall
   double u_w = 0.0;             //current speed of the wall 
 
   double n = M_PI / 10.0;
@@ -29,12 +29,10 @@ int main()
 	long nx=ceil(length/deltaX+epsilon)+1;   //number of nodes in x direction
 	long ny=ceil(2*height/deltaX+epsilon)+1; //number of nodes in y direction
 
-  //-----------------------------Wall---------------------------------
-  
-
   //-----------------------------Time---------------------------------
-	long timeSteps=2000000;        //time steps to go
-	int writeInterval=20000;
+	long timeSteps=240001;        //time steps to go
+	int writeInterval=10000;
+  int minTimeStep= 200000;
 
   double deltaT = 5e-4;
 
@@ -480,7 +478,7 @@ int main()
 		cout << "time step: "<< t << " error [%]: "<< error << endl;
 	  }
 	  //write results for appropiate time steps
-	  if (t % writeInterval == 0){
+	  if ((t % writeInterval == 0) && (t > minTimeStep)){
       writeResults(t, deltaT, nx, ny, deltaX, fluidDensity, speedOfSound, fluidVelocity);
       vector<double> vvelo;
       int testk = nx /2;
@@ -493,7 +491,7 @@ int main()
 	} //end time loop
 
 	//write final result
-	writeResults(t, deltaT, nx, ny, deltaX, fluidDensity, speedOfSound, fluidVelocity);
+	//writeResults(t, deltaT, nx, ny, deltaX, fluidDensity, speedOfSound, fluidVelocity);
 
   //write velocity vector
   ofstream ofile;

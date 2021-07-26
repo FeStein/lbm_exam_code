@@ -3,7 +3,7 @@ CC = clang++
 CFLAGS = -g -Wall -std=c++11 -fopenmp -L /usr/local/opt/llvm/lib -I /usr/local/opt/llvm/include
 
 all: channelFlow
-	./channelFlow
+	./channelFlow 0.05
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c -o $@ $<
