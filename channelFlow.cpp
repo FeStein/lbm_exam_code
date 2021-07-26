@@ -6,6 +6,8 @@
 #include <math.h>
 #include <string>
 
+#include <vector>
+
 using namespace std;
 
 int main()
@@ -24,7 +26,7 @@ int main()
 	long ny=ceil(2*height/deltaX+epsilon)+1; //number of nodes in y direction
 
   //-----------------------------Time---------------------------------
-	long timeSteps=200000;        //time steps to go
+	long timeSteps=2000000;        //time steps to go
 	int writeInterval=20000;
 
   double deltaT = 5e-5;
@@ -45,10 +47,18 @@ int main()
   double speedOfSound = xsi0 / sqrt(3.);
   double omega = pow(speedOfSound, 2) * deltaT / (viscosity + 0.5 * pow(speedOfSound, 2) * deltaT);
 
+
+  //----------------------------------------------------------------
+  //      Parameter Output
+  //----------------------------------------------------------------
+  
 	//check omega for stability reasons
 	cout << "Omega is: " << omega << endl;
 
-	//allocate and init matrices: 
+  //----------------------------------------------------------------
+  //      Data Structure Definition
+  //----------------------------------------------------------------
+
 	//first array index is x-direction; second array index is y-direction
 	double** fluidDensity=new double*[nx]; //matrix for fluid density at every node
 	for(int k=0;k<nx;k++)
@@ -96,8 +106,10 @@ int main()
 	xsi[0][0]=xsi0; xsi[1][0]=0; xsi[2][0]=-xsi0; xsi[3][0]=0; xsi[4][0]=xsi0; xsi[5][0]=-xsi0; xsi[6][0]=-xsi0; xsi[7][0]=xsi0; xsi[8][0]=0;
 	xsi[0][1]=0; xsi[1][1]=xsi0; xsi[2][1]=0; xsi[3][1]=-xsi0; xsi[4][1]=xsi0; xsi[5][1]=xsi0; xsi[6][1]=-xsi0; xsi[7][1]=-xsi0; xsi[8][1]=0;
 
-	//result visualization --> use vtk file here
-	//bad style; used lambda here only for simplicity!
+  //----------------------------------------------------------------
+  //      VTK Writer
+  //----------------------------------------------------------------
+  
 	auto writeResults = [](long t, double deltaT, long nx, long ny, double deltaX, double** fluidDensity, double speedOfSound, double*** fluidVelocity)
 	{
 		string filename("results_unstable" + to_string(static_cast<long>(t)) + ".vtk");
@@ -134,8 +146,14 @@ int main()
 		results.close();
 	};//end writeResults
 
+  //----------------------------------------------------------------
+  //      LBM Algorithm
+  //----------------------------------------------------------------
+
 	//init time step counter for use outside of loop
 	long t = 0;
+  vector<double> vconv;
+  vector<vector<double>> vvelo_write;
 	//outer loop over all time steps
 	for (t=0;t<timeSteps;t++)
 	{
@@ -385,20 +403,20 @@ int main()
       //fix y to top boundary
       int l = ny - 1; 
       // specular reflection of wall distributions --> positive y-direction
-      distribution[k][l - 1][0][3] = distribution[k][l][0][1];  //i = 36
-      distribution[k - 1][l - 1][0][6] = distribution[k][l][0][5];  //i = 6
-      distribution[k + 1][l - 1][0][7] = distribution[k][l][0][4];  //i = 7
+      distribution[k][l - 1][0][3] = distribution[k][l][0][1];  //i = 1
+      distribution[k][l - 1][0][6] = distribution[k][l][0][5];  //i = 6
+      distribution[k][l - 1][0][7] = distribution[k][l][0][4];  //i = 7
     }
 
     // specular reflection corner node(0,ny-1)
-    distribution[0][ny - 2][0][3]   = distribution[0][ny - 1][0][1]; //i = 3
-    distribution[nx - 1][ny - 2][0][6] = distribution[0][ny - 1][0][5]; //i = 6
-    distribution[1][ny - 2][0][7]   = distribution[0][ny - 1][0][4]; //i = 7
+    //distribution[0][ny - 2][0][3]   = distribution[0][ny - 1][0][1]; //i = 3
+    //distribution[nx - 1][ny - 2][0][6] = distribution[0][ny - 1][0][5]; //i = 6
+    //distribution[1][ny - 2][0][7]   = distribution[0][ny - 1][0][4]; //i = 7
 
     // specular reflection corner node(nx-1,ny-1)
-    distribution[nx - 1][ny - 2][0][3] = distribution[nx - 1][ny - 1][0][1]; //i = 3
-    distribution[nx - 2][ny - 2][0][6] = distribution[nx - 1][ny - 1][0][5]; //i = 6
-    distribution[0][ny - 2][0][7]   = distribution[nx - 1][ny - 1][0][4]; //i = 7
+    //distribution[nx - 1][ny - 2][0][3] = distribution[nx - 1][ny - 1][0][1]; //i = 3
+    //distribution[nx - 2][ny - 2][0][6] = distribution[nx - 1][ny - 1][0][5]; //i = 6
+    //distribution[0][ny - 2][0][7]   = distribution[nx - 1][ny - 1][0][4]; //i = 7
 
     //----------------------------Moments----------------------------------
 	  for(int k=0;k<nx;k++)  //all nodes in x direction
@@ -420,7 +438,8 @@ int main()
 		} //end l
 	  } //end k
   
-	  //collision step
+    //-----------------------------Collision Step---------------------------------
+    
 	  #pragma omp parallel for
 	  for (int k=0; k<nx; k++)  //all fluid nodes in x direction
 	  {
@@ -444,11 +463,30 @@ int main()
 		cout << "time step: "<< t << " error [%]: " << endl;
 	  }
 	  //write results for appropiate time steps
-	  if (t % writeInterval == 0) writeResults(t, deltaT, nx, ny, deltaX, fluidDensity, speedOfSound, fluidVelocity);
+	  if (t % writeInterval == 0){
+      writeResults(t, deltaT, nx, ny, deltaX, fluidDensity, speedOfSound, fluidVelocity);
+      vector<double> vvelo;
+      int testk = nx /2;
+      vvelo.push_back(t);
+      for (int i = 0; i < ny; ++i) {
+        vvelo.push_back(fluidVelocity[testk][i][0]);         
+      }
+      vvelo_write.push_back(vvelo);
+    }
 	} //end time loop
 
 	//write final result
 	writeResults(t, deltaT, nx, ny, deltaX, fluidDensity, speedOfSound, fluidVelocity);
+
+  //write velocity vector
+  ofstream ofile;
+  ofile.open("velo.log");
+  for (int i = 0; i < vvelo_write.size(); ++i) {
+    for (int j = 0; j < vvelo_write[0].size(); ++j) {
+      ofile << vvelo_write[i][j] << ',';
+    }  
+    ofile << endl;
+  }
 }//end main
 
 
