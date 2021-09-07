@@ -15,11 +15,11 @@ int main(int argc, char *argv[])
   //----------------------------------------------------------------
   //      Parameter Definitions
   //----------------------------------------------------------------
-  	double u_0 = atof(argv[1]);            //max speed of the wall
-  	double u_w = 0.0;             //current speed of the wall 
+  double u_0 = atof(argv[1]);            //max speed of the wall
+  double u_w = 0.0;             //current speed of the wall 
 
-  	double n = M_PI / 10.0;
-  	double frequency = 1.0/20.0;      // frequency of the wall
+  double n = M_PI / 10.0;
+  double frequency = 1.0/20.0;      // frequency of the wall
   //-----------------------------Geometry---------------------------------
 	double height=1.0;            //half channel height in [m]
 	double length=0.5;            //channel length
@@ -32,10 +32,9 @@ int main(int argc, char *argv[])
   //-----------------------------Time---------------------------------
 	long timeSteps=240001;        //time steps to go
 	int writeInterval=10000;
-  	int minTimeStep= 200000;
+  int minTimeStep= 200000;
 
-  	double deltaT = 5e-4;
-
+  double deltaT = 5e-4;
 	int cpus = 8;                 //number of parallel threads
 	omp_set_num_threads(cpus);    //set number of threads
 
@@ -46,10 +45,10 @@ int main(int argc, char *argv[])
 	double viscosity=3e-3;        //kinematic fluid viscosity
 
   //-----------------------------Calc---------------------------------
-  	double xsi0=deltaX/deltaT; //molecular velocity
-  	double machNumber = sqrt(3.) * deltaT * maxExpectedVelocity / deltaX;
-  	double speedOfSound = xsi0 / sqrt(3.);
-  	double omega = pow(speedOfSound, 2) * deltaT / (viscosity + 0.5 * pow(speedOfSound, 2) * deltaT);
+  double xsi0=deltaX/deltaT; //molecular velocity
+  double machNumber = sqrt(3.) * deltaT * maxExpectedVelocity / deltaX;
+  double speedOfSound = xsi0 / sqrt(3.);
+  double omega = pow(speedOfSound, 2) * deltaT / (viscosity + 0.5 * pow(speedOfSound, 2) * deltaT);
 
 
   //----------------------------------------------------------------
@@ -118,9 +117,9 @@ int main(int argc, char *argv[])
 			//initialize with eq
 			for (int i=0;i<9;i++) //all lattice directions
 			{
-			 //init with rho and u=0;
-				distribution[k][l][0][i]=weigths[i]*rho; //transport array
-				distribution[k][l][1][i]=weigths[i]*rho; //collision array
+        //init with rho and u=0;
+        distribution[k][l][0][i]=weigths[i]*rho; //transport array
+        distribution[k][l][1][i]=weigths[i]*rho; //collision array
 			}//end i
 		}
 	}
@@ -174,15 +173,14 @@ int main(int argc, char *argv[])
 
 	//init time step counter for use outside of loop
 	long t = 0;
-  	vector<double> verror;
-  	vector<vector<double>> vvelo_write;
-
+  vector<double> verror;
+  vector<vector<double>> vvelo_write;
 
 	//outer loop over all time steps
 	for (t=0;t<timeSteps;t++)
 	{
-    	//calculate time dependent wall speed
-    	u_w = u_0 * cos(n * t * deltaT);
+    //calculate time dependent wall speed
+    u_w = u_0 * cos(n * t * deltaT);
 
 	  //transport step for all fluid nodes
 	  #pragma omp parallel for
@@ -326,72 +324,72 @@ int main(int argc, char *argv[])
         }
         }//end switch
         distribution[kNN][lNN][0][i] = distribution[k][l][1][i]; //transport of distribution
-        }//end i 
-	for (int i = 0; i < 9; i++) //all lattice directions; expected zero velocity
-	{
-	  int kNN = 0; //index of next neighbor in lattice
-	  int lNN = 0; //index of next neighbor in lattice
-	  int k = nx - 1; 
-	  switch (i)
-	  {
-	  case 0:
-	  {
-	  	kNN = 0;
-	  	lNN = l;
-	  	break;
-	  }
-	  case 1:
-	  {
-	  	kNN = k;
-	  	lNN = l + 1;
-	  	break;
-	  }
-	  case 2:
-	  {
-	  	kNN = k - 1;
-	  	lNN = l;
-	  	break;
-	  }
-	  case 3:
-	  {
-	  	kNN = k;
-	  	lNN = l - 1;
-	  	break;
-	  }
-	  case 4:
-	  {
-	  	kNN = 0;
-	  	lNN = l + 1;
-	  	break;
-	  }
-	  case 5:
-	  {
-	  	kNN = k - 1;
-	  	lNN = l + 1;
-	  	break;
-	  }
-	  case 6:
-	  {
-	  	kNN = k - 1;
-	  	lNN = l - 1;
-	  	break;
-	  }
-	  case 7:
-	  {
-	  	kNN = 0;
-	  	lNN = l - 1;
-	  	break;
-	  }
-	  case 8:
-	  {
-	  	kNN = k;
-	  	lNN = l;
-	  	break;
-	  }
-	  }//end switch
-	   	  
-	  distribution[kNN][lNN][0][i] = distribution[k][l][1][i]; //transport of distribution
-	} //end i
+      }//end i 
+      for (int i = 0; i < 9; i++) //all lattice directions; expected zero velocity
+      {
+        int kNN = 0; //index of next neighbor in lattice
+        int lNN = 0; //index of next neighbor in lattice
+        int k = nx - 1; 
+        switch (i)
+        {
+        case 0:
+        {
+          kNN = 0;
+          lNN = l;
+          break;
+        }
+        case 1:
+        {
+          kNN = k;
+          lNN = l + 1;
+          break;
+        }
+        case 2:
+        {
+          kNN = k - 1;
+          lNN = l;
+          break;
+        }
+        case 3:
+        {
+          kNN = k;
+          lNN = l - 1;
+          break;
+        }
+        case 4:
+        {
+          kNN = 0;
+          lNN = l + 1;
+          break;
+        }
+        case 5:
+        {
+          kNN = k - 1;
+          lNN = l + 1;
+          break;
+        }
+        case 6:
+        {
+          kNN = k - 1;
+          lNN = l - 1;
+          break;
+        }
+        case 7:
+        {
+          kNN = 0;
+          lNN = l - 1;
+          break;
+        }
+        case 8:
+        {
+          kNN = k;
+          lNN = l;
+          break;
+        }
+        }//end switch
+            
+        distribution[kNN][lNN][0][i] = distribution[k][l][1][i]; //transport of distribution
+      } //end i
     }
   
     //-----------------------------Bottom: Moving Wall (Bounce Back)---------------------------------
@@ -400,7 +398,7 @@ int main(int argc, char *argv[])
     #pragma omp parallel for
     for (int k=1;k<(nx-1);k++) //all nodes in x direction in this line; except corner nodes
     {
-	int l=0; //only bottom wall nodes (first line in y direction)
+	    int l=0; //only bottom wall nodes (first line in y direction)
     	//only lattice directions in +y direction --> bounce back
     	//i=1
     	distribution[k][l+1][0][1] = distribution[k][l][0][3] + weigths[3] * xsi[3][0] * fluidDensity[k][l+1] * veloFactor;
@@ -438,39 +436,38 @@ int main(int argc, char *argv[])
     //----------------------------Moments----------------------------------
 	  for(int k=0;k<nx;k++)  //all nodes in x direction
 	  {
-		for (int l=1;l<(ny-1);l++) //all nodes in y direction; except of wall nodes
-		{
-		  fluidDensity[k][l]=0.; //reset value
-		  fluidVelocity[k][l][0]=0.; //reset value
-		  fluidVelocity[k][l][1]=0.; //reset value
-		  for (int i=0;i<9;i++) //all lattice directions
-		  {
-		   fluidDensity[k][l]    =fluidDensity[k][l]+distribution[k][l][0][i]; //density
-		   fluidVelocity[k][l][0]=fluidVelocity[k][l][0]+xsi[i][0]*distribution[k][l][0][i]; //momentum x direction
-		   fluidVelocity[k][l][1]=fluidVelocity[k][l][1]+xsi[i][1]*distribution[k][l][0][i]; //momentum x direction
-		  } //end i
+      for (int l=1;l<(ny-1);l++) //all nodes in y direction; except of wall nodes
+      {
+        fluidDensity[k][l]=0.; //reset value
+        fluidVelocity[k][l][0]=0.; //reset value
+        fluidVelocity[k][l][1]=0.; //reset value
+        for (int i=0;i<9;i++) //all lattice directions
+        {
+         fluidDensity[k][l]    =fluidDensity[k][l]+distribution[k][l][0][i]; //density
+         fluidVelocity[k][l][0]=fluidVelocity[k][l][0]+xsi[i][0]*distribution[k][l][0][i]; //momentum x direction
+         fluidVelocity[k][l][1]=fluidVelocity[k][l][1]+xsi[i][1]*distribution[k][l][0][i]; //momentum x direction
+        } //end i
 
-		  fluidVelocity[k][l][0]=fluidVelocity[k][l][0]/fluidDensity[k][l]; //calc velocity from momentum
-		  fluidVelocity[k][l][1]=fluidVelocity[k][l][1]/fluidDensity[k][l]; //calc velocity from momentum
-		} //end l
+        fluidVelocity[k][l][0]=fluidVelocity[k][l][0]/fluidDensity[k][l]; //calc velocity from momentum
+        fluidVelocity[k][l][1]=fluidVelocity[k][l][1]/fluidDensity[k][l]; //calc velocity from momentum
+      } //end l
 	  } //end k
   
     //-----------------------------Collision Step---------------------------------
-    
 	  #pragma omp parallel for
 	  for (int k=0; k<nx; k++)  //all fluid nodes in x direction
 	  {
-		for (int l=1;l<(ny-1);l++) //all fluid nodes in y direction
-		{
-		  for (int i=0;i<9;i++) //all lattice directions;  
-		  {
-			//calc eq for this direction
-			double dotProductXsiVelo=xsi[i][0]*fluidVelocity[k][l][0]+xsi[i][1]*fluidVelocity[k][l][1];
-			double dotProductVelo=pow(fluidVelocity[k][l][0],2)+pow(fluidVelocity[k][l][1],2);
-			double eqDistribution=weigths[i]*fluidDensity[k][l]*(1.+dotProductXsiVelo/pow(speedOfSound,2)+pow(dotProductXsiVelo,2)/(2.*pow(speedOfSound,4)) - dotProductVelo/(2*pow(speedOfSound,2)));
-			distribution[k][l][1][i]=distribution[k][l][0][i]+omega*(eqDistribution-distribution[k][l][0][i]); //collision step
-		  } //end i
-		} //end l
+      for (int l=1;l<(ny-1);l++) //all fluid nodes in y direction
+      {
+        for (int i=0;i<9;i++) //all lattice directions;  
+        {
+        //calc eq for this direction
+        double dotProductXsiVelo=xsi[i][0]*fluidVelocity[k][l][0]+xsi[i][1]*fluidVelocity[k][l][1];
+        double dotProductVelo=pow(fluidVelocity[k][l][0],2)+pow(fluidVelocity[k][l][1],2);
+        double eqDistribution=weigths[i]*fluidDensity[k][l]*(1.+dotProductXsiVelo/pow(speedOfSound,2)+pow(dotProductXsiVelo,2)/(2.*pow(speedOfSound,4)) - dotProductVelo/(2*pow(speedOfSound,2)));
+        distribution[k][l][1][i]=distribution[k][l][0][i]+omega*(eqDistribution-distribution[k][l][0][i]); //collision step
+        } //end i
+      } //end l
 	  } //end k
 
     //convergence measure
