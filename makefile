@@ -1,6 +1,6 @@
 .PHONY: clean
-CC = clang++ 
-CFLAGS = -g -Wall -std=c++11 -fopenmp -L /usr/local/opt/llvm/lib -I /usr/local/opt/llvm/include
+CC = g++ 
+CFLAGS = -g -Wall -std=c++11 -fopenmp 
 
 all: channelFlow
 	./channelFlow 0.05

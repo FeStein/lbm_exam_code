@@ -19,11 +19,10 @@ int main(int argc, char *argv[])
   double u_w = 0.0;             //current speed of the wall 
 
   double n = M_PI / 10.0;
-  double frequency = 1.0/20.0;      // frequency of the wall
   //-----------------------------Geometry---------------------------------
 	double height=1.0;            //half channel height in [m]
 	double length=0.5;            //channel length
-	double deltaX = 0.005;        //grid spacing
+	double deltaX = 0.02;        //grid spacing
 	double epsilon=1e-8;          //geometrical tolerance
 
 	long nx=ceil(length/deltaX+epsilon)+1;   //number of nodes in x direction
@@ -31,11 +30,11 @@ int main(int argc, char *argv[])
 
   //-----------------------------Time---------------------------------
 	long timeSteps=240001;        //time steps to go
-	int writeInterval=10000;
-  int minTimeStep= 200000;
+	int writeInterval=10000;      // time interval to write (nt = pi)
+  int minTimeStep= 200000;      // minimal timestep to start writing
 
   double deltaT = 5e-4;
-	int cpus = 8;                 //number of parallel threads
+	int cpus = 16;                 //number of parallel threads
 	omp_set_num_threads(cpus);    //set number of threads
 
   //-----------------------------Fluid---------------------------------
@@ -473,9 +472,10 @@ int main(int argc, char *argv[])
     //convergence measure
     double error = 0.0;
     double nus;
+    int testk = nx /2 + 1;
     for (int i = 1; i < ny-1; ++i) {
       nus = (deltaX * (float(i) - 0.5)) * sqrt(n / (2 * viscosity));
-      error += abs(u_0 * exp(-nus) * cos(n * t * deltaT - nus));
+      error += fabs(u_0 * exp(-nus) * cos(n * t * deltaT - nus) - fluidVelocity[testk][i][0]);
     }
     verror.push_back(error);
 	  //do convergence measure --> 
@@ -488,7 +488,7 @@ int main(int argc, char *argv[])
 	  if ((t % writeInterval == 0) && (t > minTimeStep)){
       writeResults(t, deltaT, nx, ny, deltaX, fluidDensity, speedOfSound, fluidVelocity);
       vector<double> vvelo;
-      int testk = nx /2;
+      int testk = nx /2 + 1;
       vvelo.push_back(t);
       for (int i = 0; i < ny; ++i) {
         vvelo.push_back(fluidVelocity[testk][i][0]);         
