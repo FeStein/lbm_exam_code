@@ -15,25 +15,27 @@ int main(int argc, char *argv[])
   //----------------------------------------------------------------
   //      Parameter Definitions
   //----------------------------------------------------------------
-  double u_0 = atof(argv[1]);            //max speed of the wall
+  double u_0 = 0.5 / 10.0;            //max speed of the wall
   double u_w = 0.0;             //current speed of the wall 
 
   double n = M_PI / 10.0;
   //-----------------------------Geometry---------------------------------
 	double height=1.0;            //half channel height in [m]
 	double length=0.5;            //channel length
-	double deltaX = 0.02;        //grid spacing
+	double deltaX = 0.01 * atof(argv[1]);        //grid spacing
 	double epsilon=1e-8;          //geometrical tolerance
 
 	long nx=ceil(length/deltaX+epsilon)+1;   //number of nodes in x direction
 	long ny=ceil(2*height/deltaX+epsilon)+1; //number of nodes in y direction
 
   //-----------------------------Time---------------------------------
-	long timeSteps=240001;        //time steps to go
+  double deltaT = 5e-04 * pow(atof(argv[1]),2);
+	long timeSteps=25.0 / deltaT;        //time steps to go
 	int writeInterval=10000;      // time interval to write (nt = pi)
-  int minTimeStep= 200000;      // minimal timestep to start writing
+  int minTimeStep= 20000000;      // minimal timestep to start writing
 
-  double deltaT = 5e-4;
+  cout << "MaxInterval: " << timeSteps << endl;
+
 	int cpus = 16;                 //number of parallel threads
 	omp_set_num_threads(cpus);    //set number of threads
 
@@ -475,8 +477,9 @@ int main(int argc, char *argv[])
     int testk = nx /2 + 1;
     for (int i = 1; i < ny-1; ++i) {
       nus = (deltaX * (float(i) - 0.5)) * sqrt(n / (2 * viscosity));
-      error += fabs(u_0 * exp(-nus) * cos(n * t * deltaT - nus) - fluidVelocity[testk][i][0]);
+      error += pow(fabs(u_0 * exp(-nus) * cos(n * t * deltaT - nus) - fluidVelocity[testk][i][0]),2);
     }
+    error = sqrt(error / (ny - 2));
     verror.push_back(error);
 	  //do convergence measure --> 
 	  if (t % 1000 == 0)
